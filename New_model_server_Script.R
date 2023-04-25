@@ -104,6 +104,11 @@ observe({
   updateSelectInput(session,"district_validation",choices=var_names_New_model()$dat$district,
                     selected =var_names_New_model()$dat$district[1])
   
+   #district_manage
+  
+  updateSelectInput(session,"district_manage",choices=var_names_New_model()$dat$district,
+                    selected =var_names_New_model()$dat$district[1])
+  
   
   updateSliderInput(session,"new_model_Year_plot",
                     min=min(var_names_New_model()$dat$year),
