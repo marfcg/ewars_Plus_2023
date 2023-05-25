@@ -365,9 +365,7 @@ get_weekly_prediction_4<-function(pp){
   set.seed(4500)
   s <- 1000
   
-  #xx <- inla.posterior.sample(s,pred_one,num.threads =2,seed=4500)
-  xx <- inla.posterior.sample(s,pred_one,seed=4500)
-
+  xx <- inla.posterior.sample(s,pred_one,num.threads="1:1",seed=4500)
   xx.s <- inla.posterior.sample.eval(function(...) c(theta[1], Predictor[idx.pred]), xx)
   #dim(xx.s)
   mpred<-length(idx.pred)
@@ -466,7 +464,7 @@ get_weekly_prop_pred<-function(pp){
   set.seed(4500)
   s <- 1000
   
-  xx <- inla.posterior.sample(s,pred_one,seed=34556)
+  xx <- inla.posterior.sample(s,pred_one,seed=34556,num.threads="1:1")
   xx.s <- inla.posterior.sample.eval(function(...) c(theta[1], Predictor[idx.pred]), xx)
   #dim(xx.s)
   mpred<-length(idx.pred)

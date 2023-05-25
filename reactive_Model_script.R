@@ -319,8 +319,7 @@ Out.Mod<<-eventReactive(c(
       pred_Eval<-foreach(a=1:nrow(run_grid),.combine =rbind)%do% get_weekly_prediction_4(a)
      ##create path
 
-      #path_cr<-paste0(getwd(),'/ewars_Plus_demo_Files/')
-      path_cr<-file.path(getwd(),'ewars_Plus_demo_Files')
+      path_cr<-file.path(getwd(),"ewars_Plus_demo_Files")
 
       if(!dir.exists(path_cr)){
         dir.create(path_cr)
@@ -331,9 +330,7 @@ Out.Mod<<-eventReactive(c(
       
       list_Save1<-list(pred_vals_all=pred_Eval,
                        res_promise=res_m)
-      #saveRDS(list_Save1,paste0(pth,"Model_pred_Eval.rds"),
       saveRDS(list_Save1,file.path(pth,"Model_pred_Eval.rds"),
-
               compress =T)
       
       pred_Eval
@@ -392,11 +389,12 @@ Out.Mod<<-eventReactive(c(
                        original_Input_data=var_names_New_model()$dat,
                        nlags=nlag,
                        other_covariates=add.var,
-                       all_endemic=all_endemic)
-
-    #path_cr<-paste0(getwd(),'/ewars_Plus_demo_Files/')
-    path_cr<-file.path(getwd(),'ewars_Plus_demo_Files')
-
+                       all_endemic=all_endemic,
+                       new_model_Year_validation=input$new_model_Year_validation,
+                       z_outbreak_new=input$z_outbreak_new)
+    path_cr<-file.path(getwd(),"ewars_Plus_demo_Files")
+    
+    
       
       if(!dir.exists(path_cr)){
         dir.create(path_cr)
@@ -404,9 +402,7 @@ Out.Mod<<-eventReactive(c(
       
       pth<-path_cr
     
-    #saveRDS(list_Save_Db,paste0(pth,"ewars_Plus_DB_files.rds"),
     saveRDS(list_Save_Db,file.path(pth,"ewars_Plus_DB_files.rds"),
-
             compress =T)
     
     
@@ -421,6 +417,8 @@ Out.Mod<<-eventReactive(c(
          names_cov_Plot=names_cov_Plot,
          basis_var_n=basis_var_n,
          nlags=nlag,
-         all_endemic=all_endemic)
+         all_endemic=all_endemic,
+         new_model_Year_validation=input$new_model_Year_validation,
+         z_outbreak_new=input$z_outbreak_new)
   },
   ignoreNULL=F)

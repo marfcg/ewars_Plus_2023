@@ -4,15 +4,24 @@ observeEvent(input$dat_prospective,{
   
   req(input$dat_prospective)
   source("New_model_helper_Functions.R")
+  ##load previous run
+  path_cr<-paste0(getwd(),'/ewars_Plus_demo_Files/')
   
-  population<-input$population_New_model
-  pop.var.dat<-input$population_New_model
-  alarm_indicators<-input$alarm_indicators_New_model
-  other_alarm_indicators<-input$other_alarm_indicators_New_model
-  number_of_cases<-input$number_of_cases_New_model
+  db1_fl<-file.path(getwd(),"ewars_Plus_demo_Files","ewars_Plus_DB_files.rds")
+  db1_pred_fl<-file.path(getwd(),"ewars_Plus_demo_Files","Model_pred_Eval.rds")
+
+  data_DB1<-readRDS(db1_fl)
+  pred_data_DB1<-readRDS(db1_pred_fl)
+  
+  
+  population<-data_DB1$covar_to_Plot[2]
+  pop.var.dat<-data_DB1$covar_to_Plot[2]
+  alarm_indicators<-data_DB1$alarm_indicators
+  other_alarm_indicators<-data_DB1$other_covariates
+  number_of_cases<-data_DB1$covar_to_Plot[1]
   base_vars<-c("district","year","week")
   
-  boundary_file<-var_names_New_model()$SHP
+  boundary_file<-data_DB1$shape_file
   boundary_file$district<-as.numeric(boundary_file$district)
   
   #if(!dir.exists(paste0(getwd(),"/INLA"))){
@@ -51,10 +60,11 @@ observeEvent(input$dat_prospective,{
     data
   }
   
-  inFile_a <- input$dat_new_Model
+  #inFile_a <- input$dat_new_Model
   inFile_b <- input$dat_prospective
   
-  Survilance_data<-get_D_ata(inFile_a$datapath)
+  Survilance_data<-data_DB1$original_Input_data
+
   prediction_Data<-get_D_ata(inFile_b$datapath)
   
   ## update the districts Tab on DBII
@@ -100,7 +110,7 @@ observeEvent(input$dat_prospective,{
     dplyr::mutate(district_w=paste0(district,'_',week)) %>% 
     dplyr::arrange(district,year,week)
   
-  nlag <<- input$nlags
+  nlag <<- data_DB1$nlags
   
   alarm_vars<-alarm_indicators
   
@@ -209,8 +219,13 @@ observeEvent(input$dat_prospective,{
     forecast_dat<<-foreach(a=1:nrow(pros_week),
                           .combine =rbind,
                           .export =export_tables)%do% get_weekly_prop_pred(a)
-    #saveRDS(forecast_dat,"forecast_dat_2022_07_06.rds")
+    date_run<-format(Sys.Date(),"%Y_%m_%d")
+    save_N<-file.path(getwd(),"ewars_Plus_demo_Files",paste0("forecast_dat_",date_run,".rds"))
+
+    saveRDS(forecast_dat,save_N,compress =T)
     #forecast_dat<<-readRDS("forecast_dat_2022_07_06.rds")
+    #fore_fl<-file.path(getwd(),"ewars_Plus_demo_Files","forecast_dat_2023_05_25.rds")
+    #forecast_dat<<-readRDS(fore_fl)
     
     p_progress_pros$close()
   })
@@ -221,6 +236,7 @@ observeEvent(input$dat_prospective,{
   ## read in validation data
   
   #pred_vals_all<-readRDS("pred_eval.rds") 
+  pred_vals_all_prev<-pred_data_DB1$pred_vals_all
   
   sel_var_endemic<<-c(base_vars,number_of_cases,population)
   
@@ -231,21 +247,24 @@ observeEvent(input$dat_prospective,{
   names(dat.4.endemic_pros)<-c(base_vars,"cases","pop")
   
   last_Yr_aug<-max(data_augmented$year,na.rm =T)
-  if(is.null(input$new_model_Year_validation)){
-    year_eval<<-max(data_augmented$year)
-  }else{
-    year_eval<<-input$new_model_Year_validation
-    
-  }
+  # if(is.null(input$new_model_Year_validation)){
+  #   year_eval<<-max(data_augmented$year)
+  # }else{
+  #   year_eval<<-input$new_model_Year_validation
+  #   
+  # }
+  
+  year_eval<<-data_DB1$new_model_Year_validation
   
   #Years_orig<<-year_eval:end.year
   
   
   
   ## now work with specific week
-  observeEvent(c(input$district_prospective,
-                 input$z_outbreak_new,
-                 input$new_model_Year_validation),{
+  observeEvent(c(input$district_prospective
+                 #input$z_outbreak_new,
+                 #input$new_model_Year_validation
+                 ),{
         
                    if(is.null(input$district_prospective)){
                      district_prospective<-sort(unique(prediction_Data$district))[1]
@@ -253,19 +272,23 @@ observeEvent(input$dat_prospective,{
                      district_prospective<-input$district_prospective
                    }
                      
-                     if(is.null(input$z_outbreak_new)){
-                       z_outbreak_new<-1.2
-                     }else{
-                       z_outbreak_new<-input$z_outbreak_new
-                     } 
+                     # if(is.null(input$z_outbreak_new)){
+                     #   z_outbreak_new<-1.2
+                     # }else{
+                     #   z_outbreak_new<-input$z_outbreak_new
+                     # } 
+                   z_outbreak_new<-data_DB1$z_outbreak_new
                    
-                   if(is.null(input$new_model_Year_validation)){
-                     new_model_Year_validation<-max(Out.Mod()$data_augmented$year)
-                   }else{
-                     new_model_Year_validation<-input$new_model_Year_validation
-                     
-                   }
-                   for_endemic<-Out.Mod()$all_endemic %>% 
+                   # if(is.null(input$new_model_Year_validation)){
+                   #   new_model_Year_validation<-max(data_DB1$data_augmented$year)
+                   # }else{
+                   #   new_model_Year_validation<-input$new_model_Year_validation
+                   #   
+                   # }
+                   
+                   new_model_Year_validation<-data_DB1$new_model_Year_validation
+                   
+                   for_endemic<-data_DB1$all_endemic %>% 
                      dplyr::filter(district==district_prospective) %>% 
                      dplyr::mutate(threshold_cases=mean_cases+input$z_outbreak_new*(sd_cases),
                                    threshold_rate=mean_rate+input$z_outbreak_new*(sd_rate))
@@ -273,14 +296,14 @@ observeEvent(input$dat_prospective,{
                  
                    pred_vals_all_promise %...>%  
                      {
-                       pred_vals_all<<-.
+                       pred_vals_all_prev<<-.
                        
                        pros_forcasted<-forecast_dat %>% 
                          data.frame() %>% 
                          dplyr::select(-index) %>% 
                          dplyr::filter(district==district_prospective) 
                        
-                       data_use<-pred_vals_all %>%  
+                       data_use<-pred_vals_all_prev %>%  
                          data.frame() %>% 
                          dplyr::filter(district==district_prospective & year>=new_model_Year_validation) 
    
