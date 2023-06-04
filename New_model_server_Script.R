@@ -53,11 +53,17 @@ var_names_New_model <- eventReactive(
       file.rename(inFile_shp$datapath,rename_fnm)
       #ogrListLayers(inFile_shp$datapath[shp_pos])
       #list.files(dirname(inFile_shp$datapath))
-      updateSelectInput(session,"district_new",choices=data$district,
-                        selected =data$district[1])
-      pp<-readOGR(rename_fnm[shp_pos1],layer_nm,verbose =F)
       
-      list(vars=names(data),dat=data,dists=dist,SHP=pp)
+      pp<-readOGR(rename_fnm[shp_pos1],layer_nm,verbose =F)
+      disTricts<-unique(data$district)
+      disTricts_SHP<-unique(as.numeric(pp$district))
+      
+      districts_shape<-disTricts[which(disTricts%in%disTricts_SHP)]
+      
+      updateSelectInput(session,"district_new",choices=districts_shape,
+                        selected =districts_shape[1])
+      
+      list(vars=names(data),dat=data,dists=dist,SHP=pp,districts_shape=districts_shape)
       
       
       
@@ -95,19 +101,19 @@ observe({
   updateSelectInput(session,"population_New_model",choices=var_names_New_model()$vars,
                       selected =var_names_New_model()$vars[pop_vs])
   
-  updateSelectInput(session,"district_new",choices=var_names_New_model()$dat$district,
-                    selected =var_names_New_model()$dat$district[1])
+  updateSelectInput(session,"district_new",choices=var_names_New_model()$districts_shape,
+                    selected =var_names_New_model()$districts_shape[1])
   
-  updateSelectInput(session,"district_seas",choices=var_names_New_model()$dat$district,
-                    selected =var_names_New_model()$dat$district[1])
+  updateSelectInput(session,"district_seas",choices=var_names_New_model()$districts_shape,
+                    selected =var_names_New_model()$districts_shape[1])
   
-  updateSelectInput(session,"district_validation",choices=var_names_New_model()$dat$district,
-                    selected =var_names_New_model()$dat$district[1])
+  updateSelectInput(session,"district_validation",choices=var_names_New_model()$districts_shape,
+                    selected =var_names_New_model()$districts_shape[1])
   
-   #district_manage
+  #district_manage
   
-  updateSelectInput(session,"district_manage",choices=var_names_New_model()$dat$district,
-                    selected =var_names_New_model()$dat$district[1])
+  updateSelectInput(session,"district_manage",choices=var_names_New_model()$districts_shape,
+                    selected =var_names_New_model()$districts_shape[1])
   
   
   updateSliderInput(session,"new_model_Year_plot",

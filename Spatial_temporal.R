@@ -12,7 +12,7 @@ observeEvent(c(#input$population_New_model,
 
 
 dat_fl<-var_names_New_model()$dat
-dat_slider<<-dat_fl
+dat_slider<-dat_fl
 boundary_file<-var_names_New_model()$SHP
 shp_data<-boundary_file@data
 cat(paste('Boundary file variables:\n'),paste(names(shp_data),sep=','),'\n\n')
@@ -34,11 +34,11 @@ base_vars<-c("district","year","week")
 dist<-dat_fl$district
 years.dat<-sort(unique(dat_fl$year))
 
-source("New_model_helper_Functions.R",local =F)
+source("New_model_helper_Functions.R",local =T)
 ## update the UI lag plots
-alarm.indicators<<-alarm_indicators
+alarm.indicators<-alarm_indicators
 
-bound_Data_Districts<<-unique(boundary_file$district)
+bound_Data_Districts<-unique(boundary_file$district)
 
 all_slice<-foreach(a=1:length(alarm_indicators))%do% get_fluid_slice_Output(a,'alarm.indicators')
 
@@ -68,7 +68,7 @@ output$Year_Input2<-renderUI(eval(parse(text=create_input_UI_year2("new_model_Ye
 cat(paste('\nValidation year Beg ..\n',input$new_model_Year_validation),'\n\n')
 
 
-alarm_ind.check<<-alarm_indicators
+alarm_ind.check<-alarm_indicators
   
 ## compute lag of environmental variables
 
@@ -85,7 +85,7 @@ end.year<-max(dat_A$year)
 #eval(parse(text=readLines("reactive_Model_script.R")))
 source("reactive_Model_script.R",local=T)
 #showTab("to_show2",target="Model Validation",select=T)
-barry<<-Out.Mod()
+#barry<-Out.Mod()
 all_basis_vars<-Out.Mod()$all_basis_vars
 alarm_vars<-Out.Mod()$alarm_vars
 #stop("alright")
@@ -104,7 +104,7 @@ sel_var_endemic<-c(base_vars,number_of_cases,population)
 #cat(names_cov_Plot,sep=' \n')
 #stop("helo")
 
-dat.4.endemic<<-Out.Mod()$data_augmented[,sel_var_endemic]
+dat.4.endemic<-Out.Mod()$data_augmented[,sel_var_endemic]
 names(dat.4.endemic)<-c(base_vars,"cases","pop")
 
 covar_to_Plot<-c(number_of_cases,pop.var.dat,Out.Mod()$alarm_indicators)
@@ -653,12 +653,13 @@ observeEvent(c(input$district_seas,
 #paste0('c(',paste0(for_obs,collapse =','),')')
 
 observeEvent(eval(parse(text=paste0('c(',paste0(Out.Mod()$for_obs,collapse =','),')'))),{
-  data.basis<<-Out.Mod()$data_augmented
+  data.basis<-Out.Mod()$data_augmented
+  nlag<-Out.Mod()$nlags
   alarm_vars_lag<-input$alarm_indicators_New_model
-  all_basis_vars<-foreach(a=alarm_vars_lag,.combine =c)%do% get_cross_basis(a,"data.basis")
+  all_basis_vars<-foreach(a=alarm_vars_lag,.combine =c)%do% get_cross_basis(a,data_b=data.basis,nlag=nlag)
   basis_var_n<-paste0('all_basis_vars$',names(all_basis_vars))
   alarm.indicators<-input$alarm_indicators_New_model
-  dat_slider<<-var_names_New_model()$dat
+  dat_slider<-var_names_New_model()$dat
   #all_slice<-foreach(a=1:length(alarm_vars_lag))%do% get_fluid_slice_Output(a,'alarm.indicators')
   
   #output$var_Slices_Plots<-renderUI(eval(parse(text=paste('tabsetPanel(',paste(unlist(all_slice),collapse =','),')'))))
@@ -839,7 +840,7 @@ Out.Mod()$res_promise %...>% {
       
       
       #unique(plot_d$y)
-      lag_slices_see<<-lag_slices
+      #lag_slices_see<<-lag_slices
       dat_some<-lag_slices %>% 
         dplyr::filter(y%in%  sort(sel_sli_p)) %>% 
         #dplyr::filter(y%in%  sample(lag_slices$y,3)) %>% 
@@ -1046,11 +1047,11 @@ Out.Mod()$pred_vals_all_promise %...>% {
   data_use<-pred_vals_all %>%  
     dplyr::filter(district==district_validation & year>=new_model_Year_validation) 
   
-  prob_long<<-reshape2::melt(data_use,c("district","year","week")) %>% 
+  prob_long<-reshape2::melt(data_use,c("district","year","week")) %>% 
     dplyr::left_join(for_endemic,by=c("district","year","week")) %>% 
     dplyr::mutate(indicator=as.numeric(value>threshold_cases))
   
-  compute_probs<<-prob_long %>% 
+  compute_probs<-prob_long %>% 
     dplyr::group_by(district,year,week) %>% 
     dplyr::summarise(.groups="drop",
                      predicted=mean(value),
@@ -1063,7 +1064,7 @@ Out.Mod()$pred_vals_all_promise %...>% {
   
   
 
-  data_use_<<-compute_probs %>% 
+  data_use_<-compute_probs %>% 
     dplyr::left_join(for_endemic,by=c("district","year","week")) %>% 
     dplyr::mutate(observed1=(cases/pop)*1e5,
                   observed=case_when(is.na(observed1)~0,
@@ -1132,7 +1133,7 @@ Out.Mod()$pred_vals_all_promise %...>% {
                                                TRUE~as.numeric(NA)))
   }
   
-  data_test_ggplot<<-data_use_a
+  #data_test_ggplot<<-data_use_a
   ratio_scale<-max(data_use_a$p975,na.rm =T)/max(data_use_a$prob_exceed,na.rm =T)
   
   data_use_AA<-data_use_a %>% 

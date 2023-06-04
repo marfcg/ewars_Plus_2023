@@ -3,7 +3,7 @@
 observeEvent(input$dat_prospective,{
   
   req(input$dat_prospective)
-  source("New_model_helper_Functions.R")
+  source("New_model_helper_Functions.R",local =T)
   ##load previous run
   path_cr<-paste0(getwd(),'/ewars_Plus_demo_Files/')
   
@@ -23,6 +23,8 @@ observeEvent(input$dat_prospective,{
   
   boundary_file<-data_DB1$shape_file
   boundary_file$district<-as.numeric(boundary_file$district)
+  
+  bound_Data_Districts<-unique(boundary_file$district)
   
   #if(!dir.exists(paste0(getwd(),"/INLA"))){
     #inla_tar<-list.files(getwd(),pattern ='.gz|.zip')
@@ -63,7 +65,11 @@ observeEvent(input$dat_prospective,{
   #inFile_a <- input$dat_new_Model
   inFile_b <- input$dat_prospective
   
+  UI_reactive_objs<-reactiveValues(dat_slider=data_DB1$original_Input_data)
+  
   Survilance_data<-data_DB1$original_Input_data
+  
+  #UI_reactive_objs$dat_slider<-data_DB1$original_Input_data
 
   prediction_Data<-get_D_ata(inFile_b$datapath)
   
@@ -74,19 +80,24 @@ observeEvent(input$dat_prospective,{
                     #selected =20)
   
   dist<-Survilance_data$district
-  output$dist_pros<-renderUI(eval(parse(text=create_input_UI_district("district_prospective"))))
+  
+  dat_Slid_districts<-UI_reactive_objs$dat_slider$district
+  dTT1<-sort(unique(dat_Slid_districts))
+  dTT<-dTT1[dTT1%in% bound_Data_Districts]
+  
+  output$dist_pros<-renderUI(eval(parse(text=create_input_UI_district_pros("district_prospective"))))
   
   
   print("from vars_names")
   print(head(prediction_Data))
   
-  alarm_ind.check<<-alarm_indicators
+  alarm_ind.check<-alarm_indicators
   
   dat_A<-Survilance_data %>% 
     dplyr::arrange(district,year,week) %>% 
     dplyr::filter(district %in% boundary_file$district &!week==53)
   
-  alarm.indicators<<-alarm_indicators
+  alarm.indicators<-alarm_indicators
   
   
   dat_dist<-expand.grid(week=1:52,
@@ -99,22 +110,22 @@ observeEvent(input$dat_prospective,{
                              district=sort(unique(dat_A$district))) %>% 
     dplyr::select(district,year,week)
   
-  data_augmented<<-merge(dat_dist,dat_A,by=c("district","year","week"),all.x=T,sort=T) %>% 
+  data_augmented<-merge(dat_dist,dat_A,by=c("district","year","week"),all.x=T,sort=T) %>% 
     dplyr::mutate(source="for_model") %>% 
     dplyr::arrange(district,year,week)
   
   prediction_Data_a<-merge(dat_dist_pred,prediction_Data,by=c("district","year","week"),all.x=T,sort=T)%>% 
     dplyr::mutate(source="predict")
   
-  data_Combined<<-rbind(data_augmented,prediction_Data_a) %>% 
+  data_Combined<-rbind(data_augmented,prediction_Data_a) %>% 
     dplyr::mutate(district_w=paste0(district,'_',week)) %>% 
     dplyr::arrange(district,year,week)
   
-  nlag <<- data_DB1$nlags
+  nlag <- data_DB1$nlags
   
   alarm_vars<-alarm_indicators
   
-  all_basis_vars_all_pros<<-foreach(a=alarm_vars,.combine =c)%do% get_cross_basis(a,"data_Combined")
+  all_basis_vars_all_pros<-foreach(a=alarm_vars,.combine =c)%do% get_cross_basis(a,data_b=data_Combined,nlag=nlag)
   
   ## remove the augmented data
   
@@ -123,10 +134,10 @@ observeEvent(input$dat_prospective,{
                      paste0(prediction_Data$district,'_',prediction_Data$year,'_',prediction_Data$week) &
                      data_Combined$source=="predict")
   
-  all_basis_vars_pros<<-lapply(all_basis_vars_all_pros, FUN=function(x)  x[-id.remove_pros,])
+  all_basis_vars_pros<-lapply(all_basis_vars_all_pros, FUN=function(x)  x[-id.remove_pros,])
   cat("it computed...\n")
 
-  data_Combined_model<<-data_Combined[-id.remove_pros,]
+  data_Combined_model<-data_Combined[-id.remove_pros,]
   
   print(dim(all_basis_vars_pros[[1]]))
   
@@ -137,33 +148,34 @@ observeEvent(input$dat_prospective,{
   
   district_index$district_index<-1:nrow(district_index)
   
-  data_Combined_model<<-merge(data_Combined_model,district_index,by="district",sort=F)
+  data_Combined_model<-merge(data_Combined_model,district_index,by="district",sort=F)
   
   min.year<-min(data_Combined_model$year)
   
-  data_Combined_model$year_index <<- data_Combined_model$year - (min.year-1)
+  data_Combined_model$year_index <- data_Combined_model$year - (min.year-1)
   
   
   ##create model data
   
-  fixe_alarm_vars<<-input$other_alarm_indicators_New_model
+  #fixe_alarm_vars<-input$other_alarm_indicators_New_model
+  fixe_alarm_vars<-other_alarm_indicators
   
-  add.var<<-fixe_alarm_vars[which(!fixe_alarm_vars%in% alarm_vars)]
+  add.var<-fixe_alarm_vars[which(!fixe_alarm_vars%in% alarm_vars)]
   
   
   if(length(add.var)>0){
-    sel_mod.vars<<-c(number_of_cases,pop.var.dat,"week","year_index","district_index",alarm_vars,add.var)
+    sel_mod.vars<-c(number_of_cases,pop.var.dat,"week","year_index","district_index",alarm_vars,add.var)
   }else{
-    sel_mod.vars<<-c(number_of_cases,pop.var.dat,"week","year_index","district_index",alarm_vars)
+    sel_mod.vars<-c(number_of_cases,pop.var.dat,"week","year_index","district_index",alarm_vars)
     
   }
   cat(paste(names(data_Combined_model),collapse =","),sep='\n')
   cat(paste(sel_mod.vars,collapse =","),sep='\n')
   
-  df_pros<<-data_Combined_model[,sel_mod.vars]
+  df_pros<-data_Combined_model[,sel_mod.vars]
   exists("df_pros")
-  names(df_pros)[1:5]<<-c("Y","E","T1","T2","S1")
-  df_pros$E<<-df_pros$E/1e5
+  names(df_pros)[1:5]<-c("Y","E","T1","T2","S1")
+  df_pros$E<-df_pros$E/1e5
   
   #all_basis_vars_check<<-all_basis_vars
   
@@ -175,13 +187,13 @@ observeEvent(input$dat_prospective,{
                    df=df_pros)
   
   names(df_pros)
-  baseformula <<- Y ~ 1 + f(T1,replicate = S1, model = "rw1", cyclic = TRUE, constr = TRUE,
+  baseformula <- Y ~ 1 + f(T1,replicate = S1, model = "rw1", cyclic = TRUE, constr = TRUE,
                            scale.model = TRUE,  hyper = precision.prior) +
     f(S1,replicate=T2, model = "iid") 
   
   #base_model <- mymodel(baseformula,df)
   
-  basis_var_n<<-paste0('all_basis_vars_pros$',names(all_basis_vars_pros))
+  basis_var_n<-paste0('all_basis_vars_pros$',names(all_basis_vars_pros))
   
   ## get the variable not among spline and keep as linear
   
@@ -202,7 +214,7 @@ observeEvent(input$dat_prospective,{
   
   ## get the predictions one week at a times
   
-  pros_week<<-prediction_Data %>% 
+  pros_week<-prediction_Data %>% 
     dplyr::select(year,week) %>% 
     unique()
   
@@ -213,10 +225,10 @@ observeEvent(input$dat_prospective,{
   
   #head(pred_vals_all)
   
-  time_52_pros<<-system.time({
-    p_progress_pros <<- Progress$new()
+  time_52_pros<-system.time({
+    p_progress_pros <- Progress$new()
     p_progress_pros$set(value = NULL, message ="Running predictions.." )
-    forecast_dat<<-foreach(a=1:nrow(pros_week),
+    forecast_dat<-foreach(a=1:nrow(pros_week),
                           .combine =rbind,
                           .export =export_tables)%do% get_weekly_prop_pred(a)
     date_run<-format(Sys.Date(),"%Y_%m_%d")
@@ -224,8 +236,8 @@ observeEvent(input$dat_prospective,{
 
     saveRDS(forecast_dat,save_N,compress =T)
     #forecast_dat<<-readRDS("forecast_dat_2022_07_06.rds")
-    #fore_fl<-file.path(getwd(),"ewars_Plus_demo_Files","forecast_dat_2023_05_25.rds")
-    #forecast_dat<<-readRDS(fore_fl)
+    #fore_fl<-file.path(getwd(),"ewars_Plus_demo_Files","forecast_dat_2023_06_04.rds")
+    #forecast_dat<-readRDS(fore_fl)
     
     p_progress_pros$close()
   })
@@ -238,12 +250,12 @@ observeEvent(input$dat_prospective,{
   #pred_vals_all<-readRDS("pred_eval.rds") 
   pred_vals_all_prev<-pred_data_DB1$pred_vals_all
   
-  sel_var_endemic<<-c(base_vars,number_of_cases,population)
+  sel_var_endemic<-c(base_vars,number_of_cases,population)
   
-  dat.4.endemic<<-data_augmented[,sel_var_endemic]
+  dat.4.endemic<-data_augmented[,sel_var_endemic]
   names(dat.4.endemic)<-c(base_vars,"cases","pop")
   
-  dat.4.endemic_pros<<-data_Combined[,sel_var_endemic]
+  dat.4.endemic_pros<-data_Combined[,sel_var_endemic]
   names(dat.4.endemic_pros)<-c(base_vars,"cases","pop")
   
   last_Yr_aug<-max(data_augmented$year,na.rm =T)
@@ -254,7 +266,7 @@ observeEvent(input$dat_prospective,{
   #   
   # }
   
-  year_eval<<-data_DB1$new_model_Year_validation
+  year_eval<-data_DB1$new_model_Year_validation
   
   #Years_orig<<-year_eval:end.year
   
@@ -290,13 +302,13 @@ observeEvent(input$dat_prospective,{
                    
                    for_endemic<-data_DB1$all_endemic %>% 
                      dplyr::filter(district==district_prospective) %>% 
-                     dplyr::mutate(threshold_cases=mean_cases+input$z_outbreak_new*(sd_cases),
-                                   threshold_rate=mean_rate+input$z_outbreak_new*(sd_rate))
+                     dplyr::mutate(threshold_cases=mean_cases+z_outbreak_new*(sd_cases),
+                                   threshold_rate=mean_rate+z_outbreak_new*(sd_rate))
                    
                  
-                   pred_vals_all_promise %...>%  
-                     {
-                       pred_vals_all_prev<<-.
+                   #pred_vals_all_promise %...>%  
+                     #{
+                       #pred_vals_all_prev<<-.
                        
                        pros_forcasted<-forecast_dat %>% 
                          data.frame() %>% 
@@ -308,7 +320,7 @@ observeEvent(input$dat_prospective,{
                          dplyr::filter(district==district_prospective & year>=new_model_Year_validation) 
    
     
-                       prob_long<<-reshape2::melt(data_use,c("district","year","week")) %>% 
+                       prob_long<-reshape2::melt(data_use,c("district","year","week")) %>% 
                          dplyr::left_join(for_endemic,by=c("district","year","week")) %>% 
                          dplyr::mutate(indicator=as.numeric(value>threshold_cases))
                        
@@ -316,11 +328,11 @@ observeEvent(input$dat_prospective,{
                          dplyr::filter(year==last_Yr_aug) %>% 
                          dplyr::select(-year)
                        
-                       prob_long_forecast<<-reshape2::melt(pros_forcasted,c("district","year","week")) %>% 
+                       prob_long_forecast<-reshape2::melt(pros_forcasted,c("district","year","week")) %>% 
                          dplyr::left_join(for_endemic_forecast,by=c("district","week")) %>% 
                          dplyr::mutate(indicator=as.numeric(value>threshold_cases))
                        
-                       compute_probs<<-prob_long %>% 
+                       compute_probs<-prob_long %>% 
                          dplyr::group_by(district,year,week) %>% 
                          dplyr::summarise(.groups="drop",
                                           predicted=mean(value),
@@ -331,7 +343,7 @@ observeEvent(input$dat_prospective,{
                                           prob=sum(indicator)/Total_obs)%>% 
                          dplyr::left_join(dat.4.endemic,by=c("district","year","week"))
                        
-                       compute_probs_forecast<<-prob_long_forecast %>% 
+                       compute_probs_forecast<-prob_long_forecast %>% 
                          dplyr::group_by(district,year,week) %>% 
                          dplyr::summarise(.groups="drop",
                                           predicted=mean(value),
@@ -344,7 +356,7 @@ observeEvent(input$dat_prospective,{
                        
                        
                        
-                       data_use_<<-compute_probs %>% 
+                       data_use_<-compute_probs %>% 
                          dplyr::left_join(for_endemic,by=c("district","year","week")) %>% 
                          dplyr::mutate(observed1=(cases/pop)*1e5,
                                        observed=case_when(is.na(observed1)~0,
@@ -370,7 +382,7 @@ observeEvent(input$dat_prospective,{
     
     cat("computed probs \n")
     print(data_use_$prob)
-    idx.comp<<-which(!is.na(data_use_$outbreak))
+    idx.comp<-which(!is.na(data_use_$outbreak))
     
     
     roc_try<-try(reportROC(gold=as.numeric(data_use_$outbreak)[idx.comp],
@@ -403,7 +415,7 @@ observeEvent(input$dat_prospective,{
                         "Negative Predictive Value (NPV)",roc_report$NPV,roc_report$NPV.low,roc_report$NPV.up)
       
       data_use_a<-data_use_ %>% 
-        dplyr::mutate(prob_exceed=probs,
+        dplyr::mutate(prob_exceed=prob,
                       cutoff=NA,
                       validation_alarm=as.numeric(NA))
       
@@ -499,7 +511,7 @@ observeEvent(input$dat_prospective,{
     str(tem.d)
     
     tem.d$alarm_threshold<-as.numeric(tem.d$alarm_threshold)
-    ggplot_dat_DB2_test<<-tem.d
+    #ggplot_dat_DB2_test<<-tem.d
     plot2<-ggplot()+
       
       geom_line(aes(x=week,y=outbreak_probability,col="Outbreak probability"),lwd=0.3,data=tem.d)+
@@ -641,7 +653,7 @@ observeEvent(input$dat_prospective,{
     
     output$prediction_tab_pros<-renderDataTable(data.table(tem.d2))
     
-                     }
+                     
   })
   
 })

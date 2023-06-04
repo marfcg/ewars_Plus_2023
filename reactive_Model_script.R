@@ -1,6 +1,6 @@
-
+#source("New_model_helper_Functions.R",local =T,echo=F)
 #Sys.sleep(120)
-Out.Mod<<-eventReactive(c(
+Out.Mod<-eventReactive(c(
   # input$alarm_indicators_New_model,
   # input$nlags,
   # input$other_alarm_indicators_New_model,
@@ -11,7 +11,7 @@ Out.Mod<<-eventReactive(c(
     #req(c(input$alarm_indicators_New_model,input$nlags))
     req(c(input$alarm_indicators_New_model,input$nlags,input$new_model_Year_validation))
     #req(input$other_alarm_indicators_New_model)
-   
+    source("New_model_helper_Functions.R",local =T,echo=F)
     cat(paste('\nValidation year now ..\n',input$new_model_Year_validation),'\n\n')
     
     #source("New_model_helper_Functions.R")
@@ -22,7 +22,7 @@ Out.Mod<<-eventReactive(c(
     
     alarm_indicators<-input$alarm_indicators_New_model
     cat(paste('\nAlarm indicators now ..\n'),paste(input$alarm_indicators_New_model,collapse =','),'\n\n')
-    alarm.indicators<<-alarm_indicators
+    alarm.indicators<-alarm_indicators
     
     all_slice<-foreach(a=1:length(alarm_indicators))%do% get_fluid_slice_Output(a,'alarm.indicators')
     
@@ -49,7 +49,7 @@ Out.Mod<<-eventReactive(c(
     #cat(names_cov_Plot,sep=' \n')
     #stop("helo")
     
-    covar_to_Plot<<-c(number_of_cases,pop.var.dat,alarm_indicators)
+    covar_to_Plot<-c(number_of_cases,pop.var.dat,alarm_indicators)
     
     par_text0<-get_UI_update_d(obj.plots=covar_to_Plot,
                                panel_Update="Descriptive Plots" ,
@@ -108,7 +108,7 @@ Out.Mod<<-eventReactive(c(
                           district=sort(unique(dat_A$district))) %>% 
       dplyr::select(district,year,week)
     
-    data_augmented<<-merge(dat_dist,dat_A,by=c("district","year","week"),all.x=T,sort=T) %>% 
+    data_augmented<-merge(dat_dist,dat_A,by=c("district","year","week"),all.x=T,sort=T) %>% 
       dplyr::mutate(district_w=paste0(district,'_',week)) %>% 
       dplyr::arrange(district,year,week)
     nrow(data_augmented)  
@@ -116,10 +116,10 @@ Out.Mod<<-eventReactive(c(
     ##run the INLA model here
     
     
-    nlag <<- input$nlags
-    alarm_vars<<-input$alarm_indicators_New_model
+    nlag <- input$nlags
+    alarm_vars<-input$alarm_indicators_New_model
     
-    all_basis_vars<<-foreach(a=alarm_vars,.combine =c)%do% get_cross_basis(a,"data_augmented")
+    all_basis_vars<-foreach(a=alarm_vars,.combine =c)%do% get_cross_basis(a,data_b=data_augmented,nlag=nlag)
     
     #cat("got here..\n")
     data_augmented<-data_augmented %>% 
@@ -153,7 +153,7 @@ Out.Mod<<-eventReactive(c(
     
     add.var<-fixe_alarm_vars[which(!fixe_alarm_vars%in% alarm_vars)]
     
-    data_augmented<<-data_augmented
+    data_augmented<-data_augmented
     
     if(length(add.var)>0){
       sel_mod.vars<-c(number_of_cases,pop.var.dat,"week","year_index","district_index",alarm_vars,add.var)
@@ -167,7 +167,7 @@ Out.Mod<<-eventReactive(c(
     
     names(df)[1:5]<-c("Y","E","T1","T2","S1")
     df$E<-df$E/1e5
-    df1<<-df
+    df1<-df
     
     
     
@@ -178,7 +178,7 @@ Out.Mod<<-eventReactive(c(
     
     #base_model <- mymodel(baseformula,df)
     
-    basis_var_n<<-paste0('all_basis_vars$',names(all_basis_vars))
+    basis_var_n<-paste0('all_basis_vars$',names(all_basis_vars))
     
     ## get the variable not among spline and keep as linear
     
@@ -218,7 +218,7 @@ Out.Mod<<-eventReactive(c(
         summary(res)
       }
     
-    formula0.2a<<-formula0.2
+    formula0.2a<-formula0.2
     
     
     #base_model <- mymodel(baseformula,df)
@@ -247,11 +247,11 @@ Out.Mod<<-eventReactive(c(
     Max_YR_idx<-which(c(beg.year:end.year)==max(unique(data_augmented$year)))
     
     if(is.null(input$new_model_Year_validation)){
-      YR.val<<-Max_YR_idx
+      YR.val<-Max_YR_idx
       
     }else{
       
-      YR.val<<-which(c(beg.year:end.year)==input$new_model_Year_validation)
+      YR.val<-which(c(beg.year:end.year)==input$new_model_Year_validation)
      
     }
     
@@ -267,15 +267,20 @@ Out.Mod<<-eventReactive(c(
     
     if(is.null(input$new_model_Year_validation)){
       
-      run_grid<<-foreach(a=all_YR_r,.combine =rbind)%do% data.frame(beg_week=1,
+      run_grid<-foreach(a=all_YR_r,.combine =rbind)%do% data.frame(beg_week=1,
                                                                     end_week=52,
                                                                     YR=a,
                                                                     cat=0)
     }else{
-      run_grid<<-foreach(a=all_YR_r,.combine =rbind)%do% data.frame(beg_week=beg_gri,
+      run_grid<-foreach(a=all_YR_r,.combine =rbind)%do% data.frame(beg_week=beg_gri,
                                                                     end_week=end_gri,
                                                                     YR=a,
                                                                     cat=1)
+      
+      # run_grid<-foreach(a=all_YR_r,.combine =rbind)%do% data.frame(beg_week=1,
+      #                                                              end_week=52,
+      #                                                              YR=a,
+      #                                                              cat=0)
     }
     
     
@@ -290,33 +295,36 @@ Out.Mod<<-eventReactive(c(
       
     }
     
-    Years_orig<<-year_eval:end.year
+    Years_orig<-year_eval:end.year
     ## run weekly cross validation for the predicted year
     
     #plan(multisession(workers =2))
     #plan(sequential)
   
-    p_progress <<- Progress$new()
+    p_progress <- Progress$new()
     
     if(is.null(input$new_model_Year_validation)){
       message_Cross<-"loading .."
     }else{
       message_Cross<-"Cross validation running..."
     }
-      
+
     p_progress$set(value = NULL, message =message_Cross )
     
-    pred_vals_all_promise<<-future_promise({
-      
+    res_m<-mymodel(formula0.2,df)
+    theta_beg<-res_m$internal.summary.hyperpar$mean 
+    
+    pred_vals_all_promise<-future_promise({
+      #source("New_model_helper_Functions.R",local =F,echo=F)
       #pkgload::load_all(paste0(getwd(),"/INLA"),export_all =F)
       #inla.dynload.workaround()
       
       #inla.binary.install()
       #inla.dynload.workaround()
      
-      res_m<-mymodel(formula0.2,df)
-      theta_beg<<-res_m$internal.summary.hyperpar$mean 
-      pred_Eval<-foreach(a=1:nrow(run_grid),.combine =rbind)%do% get_weekly_prediction_4(a)
+      #res_m<-mymodel(formula0.2,df)
+      #theta_beg<-res_m$internal.summary.hyperpar$mean 
+      pred_Eval<-foreach(a=1:nrow(run_grid),.combine =rbind,.export =c("theta_beg","run_grid","df1"))%do% get_weekly_prediction_4(a)
      ##create path
 
       path_cr<-file.path(getwd(),"ewars_Plus_demo_Files")

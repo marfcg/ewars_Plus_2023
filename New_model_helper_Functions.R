@@ -4,8 +4,10 @@
 #alarm_var<-"rainsum"
 #dat<-"data_augmented"
 
-get_cross_basis<-function(alarm_var,dat){
-  dat.N<-get(dat)[,c('district',alarm_var)]
+#get_cross_basis<-function(alarm_var,dat){
+get_cross_basis<-function(alarm_var,data_b=data.basis,nlag=nlag){
+  #dat.N<-get(dat)[,c('district',alarm_var)]
+  dat.N<-data_b[,c('district',alarm_var)]
   names(dat.N)[2]<-"alarm_var"
   
   if(str_detect(alarm_var,"rain|prec")){
@@ -62,10 +64,11 @@ mymodel2 <- function(formula, data = df, family = "nbinomial", config = FALSE)
 }
 
 mymodel3 <- function(formula, data = df, family = "nbinomial", config = FALSE)
-  
+  #theta_beg<-get("theta_beg",envir =.GlobalEnv)
 {
   model <- inla(formula = formula, data = data, family = family, offset = log(E),
-                control.inla = list(strategy = 'adaptive'), 
+                control.inla = list(strategy = 'adaptive',
+                                    use.directions=T), 
                 control.compute = list(dic = F, config = config, 
                                        cpo = F, return.marginals = F),
                 control.fixed = list(correlation.matrix = TRUE, 
@@ -290,20 +293,21 @@ update_slider_vals<-function(tt,var.Obj){
 get_weekly_prediction<-function(pp){
   
   #cat(paste0("\nYear_Week  ",run_grid[pp,]$YR,'><',run_grid[pp,]$week),'\n')
-  df_pred<<-df1 
-  idx.pred<<-which(df_pred$T2== run_grid[pp,]$YR&df_pred$T1== run_grid[pp,]$week)
+  df_pred<-df1 
+  idx.pred<-which(df_pred$T2== run_grid[pp,]$YR&df_pred$T1== run_grid[pp,]$week)
   df_pred$Y[idx.pred]<-NA
   
   #if(exists("pred_one")){
     #rm(pred_one)
   #}
-  pred_one<<-mymodel3(formula0.2a,df_pred,config =T)
+  #theta_beg<-theta_beg
+  pred_one<-mymodel3(formula0.2a,df_pred,config =T)
   
   set.seed(4500)
   s <- 1000
   
-  xx <<- inla.posterior.sample(s,pred_one)
-  xx.s <<- inla.posterior.sample.eval(function(...) c(theta[1], Predictor[idx.pred]), xx)
+  xx <- inla.posterior.sample(s,pred_one)
+  xx.s <- inla.posterior.sample.eval(function(...) c(theta[1], Predictor[idx.pred]), xx)
   #dim(xx.s)
   mpred<-length(idx.pred)
   y.pred <- matrix(NA,mpred, s)
@@ -348,25 +352,29 @@ get_weekly_prediction<-function(pp){
 }
 
 get_weekly_prediction_4<-function(pp){
-  
+  # #cat(paste0("objects in scope:",ls()),sep='\n')
+  # if(exists("run_grid")){
+  #   message("run grid exists")
+  # }
   time_Cross<-system.time({
     
   weeks_ruN<-run_grid[pp,]$beg_week:run_grid[pp,]$end_week
   #cat(paste0("\nYear_Week  ",run_grid[pp,]$YR,'><',run_grid[pp,]$week),'\n')
-  df_pred<<-df1 
-  idx.pred<<-which(df_pred$T2== run_grid[pp,]$YR&df_pred$T1 %in%  weeks_ruN)
+  df_pred<-df1 
+  idx.pred<-which(df_pred$T2== run_grid[pp,]$YR&df_pred$T1 %in%  weeks_ruN)
   df_pred$Y[idx.pred]<-NA
   
   #if(exists("pred_one")){
   #rm(pred_one)
   #}
+  #theta_beg<-get("theta_beg",envir =.GlobalEnv)
   pred_one<-mymodel3(formula0.2a,df_pred,config =T)
   
   set.seed(4500)
   s <- 1000
   
   xx <- inla.posterior.sample(s,pred_one,num.threads="1:1",seed=4500)
-  xx.s <- inla.posterior.sample.eval(function(...) c(theta[1], Predictor[idx.pred]), xx)
+  xx.s <- inla.posterior.sample.eval(function(...,idx.pred=idx.pred) c(theta[1], Predictor[idx.pred]), xx)
   #dim(xx.s)
   mpred<-length(idx.pred)
   y.pred <- matrix(NA,mpred, s)
@@ -420,7 +428,7 @@ get_weekly_prediction_4<-function(pp){
                            district=data_augmented$district[idx.pred],
                            index=idx.pred,
                            y.pred)
-  pth<-"~/Library/CloudStorage/GoogleDrive-ewarsplusdemo@gmail.com/My Drive/ewars_Plus_demo_Files/Cross_validation_Predictions/"
+  #pth<-"~/Library/CloudStorage/GoogleDrive-ewarsplusdemo@gmail.com/My Drive/ewars_Plus_demo_Files/Cross_validation_Predictions/"
   #out_sav_Nam<-paste0(pth,"Predictions_",year_Now,'_weeks_',week_lab,'.rds')
   #saveRDS(ypred_save,out_sav_Nam,
           #compress =T)
@@ -514,7 +522,7 @@ get_weekly_prop_pred<-function(pp){
                     district=dat_Now$district[idx.pred],
                     index=idx.pred,
                     y.pred)
-  pth<-"~/Library/CloudStorage/GoogleDrive-ewarsplusdemo@gmail.com/My Drive/ewars_Plus_demo_Files/Cross_validation_Predictions/"
+  #pth<-"~/Library/CloudStorage/GoogleDrive-ewarsplusdemo@gmail.com/My Drive/ewars_Plus_demo_Files/Cross_validation_Predictions/"
   #out_sav_Nam<-paste0(pth,"Predictions_",year_Now,'_weeks_',week_lab,'.rds')
   #saveRDS(ypred_save,out_sav_Nam,
   #compress =T)
@@ -538,6 +546,23 @@ var<-'district_new'
 create_input_UI_district<-function(var){
   dTT1<<-sort(unique(dat_slider$district))
   dTT<<-dTT1[dTT1%in% bound_Data_Districts]
+  aa<-tribble(~var,
+              paste0('selectInput(inputId="',var,'",'),
+              "label = 'District',",      
+              'choices=dTT,',
+              'selected =dTT[1],',
+              'selectize =T,',
+              'multiple =F)',
+              
+  )
+  aa$var
+  paste(aa$var,collapse =' ')
+}
+
+create_input_UI_district_pros<-function(var){
+  # dat_Slid_districts<-isolate(UI_reactive_objs$dat_slider$district)
+  # dTT1<-sort(unique(dat_Slid_districts))
+  # dTT<-dTT1[dTT1%in% bound_Data_Districts]
   aa<-tribble(~var,
               paste0('selectInput(inputId="',var,'",'),
               "label = 'District',",      
