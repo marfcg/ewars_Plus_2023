@@ -93,6 +93,8 @@ suppressMessages(library(googleAuthR,warn.conflicts =F))
 
 suppressMessages(library(future,warn.conflicts =F))
 
+# Increase maximum file size to 10GB:
+options(shiny.maxRequestSize = 10000 * 1024^2) 
 #plan(multisession(workers =2))
 plan(sequential)
 #library(doFuture)

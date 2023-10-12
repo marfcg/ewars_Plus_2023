@@ -17,7 +17,7 @@ var_names_New_model <- eventReactive(
           data <- data.frame(read_xls(p,sheet=1),stringsAsFactors =F)
         } 
         else if(str_detect(p,".csv$")){
-          data <- read.csv(p,header =T,stringsAsFactors =F)
+          data <- fread(p,header =T,stringsAsFactors =F)
         } else{
           data <- data.frame(read_xlsx("Demo_Data.xlsx",sheet=1),stringsAsFactors =F)
         }
@@ -38,7 +38,7 @@ var_names_New_model <- eventReactive(
       inFile_shp <- input$shape_file_new_Model
       #print(inFile_shp)
       shp_pos1<-grep(".shp",inFile_shp$name)
-      layer_nm<-str_remove(inFile_shp$name[shp_pos1],'.shp')
+      layer_nm<-str_remove(inFile_shp$name[shp_pos1],'\\.shp|\\.gpkg')
       #rename file
       
       #dist<-data$district

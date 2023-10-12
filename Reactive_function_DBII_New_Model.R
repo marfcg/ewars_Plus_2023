@@ -55,7 +55,7 @@ observeEvent(input$dat_prospective,{
       data <- data.frame(read_xls(p,sheet=1),stringsAsFactors =F)
     } 
     else if(str_detect(p,".csv$")){
-      data <- read.csv(p,header =T,stringsAsFactors =F)
+      data <- fread(p,header =T,stringsAsFactors =F)
     } else{
       data <- data.frame(read_xlsx("Demo_Data.xlsx",sheet=1),stringsAsFactors =F)
     }

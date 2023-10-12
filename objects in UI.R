@@ -437,7 +437,7 @@ dat_opts_spat<- tabPanel("Spatial data Upload",
                                         ##choose point/ lat long data
                                         
                                         fileInput('shape_file', 'District sub-district boundary file (.shp file)',
-                                                  accept=c('.shp','.dbf','.shx','.prj'),
+                                                  accept=c('.shp','.dbf','.shx','.prj', '.gpkg'),
                                                   multiple =T),
                                         ## choose aggregated or point data
                                         

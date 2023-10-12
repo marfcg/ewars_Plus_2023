@@ -191,7 +191,7 @@ tabPanel("Model Validation",
 
 boundary.Input<-column(12,offset =0,
                        fileInput('shape_file_new_Model', 'District sub-district boundary file (.shp file)',
-                                 accept=c('.shp','.dbf','.shx','.prj'),
+                                 accept=c('.shp','.dbf','.shx','.prj', '.gpkg'),
                                  multiple =T,
                                  width='70%'))
 
@@ -246,7 +246,7 @@ dat_opts_new_Model<- tabPanel("Spatial data Upload",
                                                         ##choose point/ lat long data
                                                         
                                                         fileInput('shape_file_new_Model', 'District sub-district boundary file (.shp file)',
-                                                                  accept=c('.shp','.dbf','.shx','.prj'),
+                                                                  accept=c('.shp','.dbf','.shx','.prj', '.gpkg'),
                                                                   multiple =T),
                                                         ## choose aggregated or point data
                                                 
