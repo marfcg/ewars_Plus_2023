@@ -1170,7 +1170,7 @@ Out.Mod()$pred_vals_all_promise %...>% {
     geom_point(aes(x=Trend,y=validation_alarm*ratio_scale,col="Alarm"),size=3)+
     geom_line(aes(x=Trend,y=prob_exceed*ratio_scale,col="Excedance Probability"),lwd=1)+
     
-    geom_line(aes(x=Trend,y=cutoff*ratio_scale,col="Cutoff Prob"),size=1.2)+
+    geom_line(aes(x=Trend,y=cutoff*ratio_scale,col="Cutoff Prob"),lwd=1.2)+
     scale_y_continuous(name = "DIR",sec.axis =sec_axis(~ . /ratio_scale,name="Probability"))+
     scale_x_continuous(breaks=breaks_p,labels =data_use_AA$lab_week[breaks_p])+
                                                          

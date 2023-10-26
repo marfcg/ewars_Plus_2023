@@ -177,6 +177,10 @@ get_slider_input_lag<-function(var,pp){
 
 get_fluid_slice_Output<-function(p,var.Obj){
   var<-get(var.Obj)[p]
+  print(var.Obj)
+  print(p)
+  print(var)
+  print(dat_slider[,var])
     #dat_slider<-var_names_New_model()$dat
   min<-round(min(dat_slider[,var],na.rm=T),0)
   min.1<-min(dat_slider[,var],na.rm=T)

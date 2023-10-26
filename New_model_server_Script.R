@@ -17,7 +17,7 @@ var_names_New_model <- eventReactive(
           data <- data.frame(read_xls(p,sheet=1),stringsAsFactors =F)
         } 
         else if(str_detect(p,".csv$")){
-          data <- fread(p,header =T,stringsAsFactors =F)
+          data <- fread(p,header =T,stringsAsFactors =F,data.table=F, check.names = T)
         } else{
           data <- data.frame(read_xlsx("Demo_Data.xlsx",sheet=1),stringsAsFactors =F)
         }

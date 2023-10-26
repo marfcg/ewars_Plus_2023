@@ -75,15 +75,35 @@ output_year_New_model<-inputPanel(column(12,
                                           value =35))
 )
 
-surv.Input_prospective<-column(12,offset =2,
+# Input prospective data (assumes aggregated case counts and/or predictive vars)
+surv.Input_prospective<-column(12,offset =0,
                                fileInput('dat_prospective', 'Upload prospective data', 
                                          accept=c('.xls','.xlsx','.csv')
-                                         ))
+                               ),
+                               uiOutput('file_dat_prospective'))
 
-
-header_Input_pros<-fluidRow(inputPanel(surv.Input_prospective,
-                                       column(12,offset=7,
-                                              uiOutput("dist_pros"))))
+# Input most recent line-data:
+surv.Input_line_dat_prospective<-column(12,offset =0,
+                               fileInput('line_dat_prospective', 'Upload prospective line-data case notifications', 
+                                         accept=c('.xls','.xlsx','.csv')
+                               ))
+surv.Input_line_dat_lastepiweek <- column(12, offset=0,
+                                          selectInput("lastepiweek_nowcast",
+                                                      "Last epidemiological week for nowcasting",
+                                                      '',multiple =F,
+                                                      width='10%'))
+surv.Input_run <- column(12, offset=0,
+                        plotOutput("dd",height ="60px"),
+                        actionButton('run_prospect','Run prospective data',
+                                     style="color: black; background-color:grey(0.5);
+                                 padding: 10px 15px; height: 80px; cursor: pointer;
+                                 font-size: 20px; font-weight: 400;")
+)
+header_Input_pros<-fluidRow(surv.Input_prospective,
+                            surv.Input_line_dat_prospective,
+                            surv.Input_line_dat_lastepiweek,
+                            surv.Input_run
+                            )
 
 pros_new_out1<-tabPanel("Uploaded_data",
                         DT::dataTableOutput("uploaded_pros")

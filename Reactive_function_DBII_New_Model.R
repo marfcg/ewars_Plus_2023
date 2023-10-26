@@ -1,9 +1,49 @@
 ## Update dashboard II for the new model
 
-observeEvent(input$dat_prospective,{
+require(lubridate)
+
+observeEvent(input$line_dat_prospective,{
+  ## read in uploaded data
+  req(input$line_dat_prospective)
+  get_D_ata<-function(p){
+    if(str_detect(p,".xlsx$")){
+      data <- data.frame(read_xlsx(p,sheet=1),stringsAsFactors =F)
+    }
+    else if(str_detect(p,".xls$")){
+      data <- data.frame(read_xls(p,sheet=1),stringsAsFactors =F)
+    } 
+    else if(str_detect(p,".csv$")){
+      data <- fread(p,header =T,stringsAsFactors =F, data.table=F, check.names = T)
+    } else{
+      data <- data.frame(read_xlsx("Demo_Data.xlsx",sheet=1),stringsAsFactors =F)
+    }
+    data
+  }
   
+  # Case notification line-data:
+  inFile_line_dat <- get_D_ata(input$line_dat_prospective$datapath)
+  epiweek.list <- inFile_line_dat %>%
+    mutate(epi.year = epiyear(date_upload),
+           epi.week = epiweek(date_upload),
+           epi.yearweek = paste0(epi.year, '-', epi.week)) %>%
+    distinct(epi.year, epi.week, epi.yearweek) %>%
+    arrange(epi.year, epi.week) %>%
+    select(epi.yearweek) %>%
+    tail(10)
+  
+  # Update last epiweek selection:
+  updateSelectInput(session,"lastepiweek_nowcast",choices=epiweek.list,
+                    selected = epiweek.list[10])
+}
+)
+
+observeEvent(input$run_prospect,{
   req(input$dat_prospective)
+  req(input$line_dat_prospective)
+  req(input$lastepiweek_nowcast)
   source("New_model_helper_Functions.R",local =T)
+  source("run_nowcaster.R", local=T)
+  
   ##load previous run
   path_cr<-paste0(getwd(),'/ewars_Plus_demo_Files/')
   
@@ -55,7 +95,7 @@ observeEvent(input$dat_prospective,{
       data <- data.frame(read_xls(p,sheet=1),stringsAsFactors =F)
     } 
     else if(str_detect(p,".csv$")){
-      data <- fread(p,header =T,stringsAsFactors =F)
+      data <- fread(p,header =T,stringsAsFactors =F, data.table=F, check.names = T)
     } else{
       data <- data.frame(read_xlsx("Demo_Data.xlsx",sheet=1),stringsAsFactors =F)
     }
@@ -63,8 +103,21 @@ observeEvent(input$dat_prospective,{
   }
   
   #inFile_a <- input$dat_new_Model
+  # Data with predictive variables:
   inFile_b <- input$dat_prospective
   
+  # Case notification line-data:
+  inFile_c <- input$line_dat_prospective
+  
+  # Generate nowcast.
+  # Return  list (line_data, nowcast) with the original line_data,
+  # and the result of the nowcasting algorithm
+  nowcasted_data <- run_nowcaster(inFile_c,
+                                  last_epiweek=input$lastepiweek_nowcast)
+  # Guarantee variable name compatibility:
+  nowcasted_data$nowcast <- nowcasted_data$nowcast %>%
+    mutate({{number_of_cases}} := Median)
+    
   UI_reactive_objs<-reactiveValues(dat_slider=data_DB1$original_Input_data)
   
   Survilance_data<-data_DB1$original_Input_data
@@ -499,8 +552,8 @@ observeEvent(input$dat_prospective,{
             panel.grid.minor.y =element_blank(),
             axis.line.x.top =element_blank(),
             panel.border =element_blank(),
-            axis.line.y =element_line(linetype=1,colour="grey",size=0.4,lineend="butt"),
-            axis.line.x =element_line(linetype=1,colour="grey",size=0.4,lineend="butt"),
+            axis.line.y =element_line(linetype=1,colour="grey",lwd=0.4,lineend="butt"),
+            axis.line.x =element_line(linetype=1,colour="grey",lwd=0.4,lineend="butt"),
             legend.position ="top",
             axis.title.y =element_blank(),
             legend.text =element_text(size=14))+
@@ -528,8 +581,8 @@ observeEvent(input$dat_prospective,{
             panel.grid.minor.y =element_blank(),
             axis.line.x.top =element_blank(),
             panel.border =element_blank(),
-            axis.line.y =element_line(linetype=1,colour="grey",size=0.4,lineend="butt"),
-            axis.line.x =element_line(linetype=1,colour="grey",size=0.4,lineend="butt"),
+            axis.line.y =element_line(linetype=1,colour="grey",lwd=0.4,lineend="butt"),
+            axis.line.x =element_line(linetype=1,colour="grey",lwd=0.4,lineend="butt"),
             legend.position ="top",
             axis.title.y =element_blank(),
             legend.text =element_text(size=14)
@@ -565,8 +618,8 @@ observeEvent(input$dat_prospective,{
             panel.grid.minor.y =element_blank(),
             axis.line.x.top =element_blank(),
             panel.border =element_blank(),
-            axis.line.y =element_line(linetype=1,colour="grey",size=0.4,lineend="butt"),
-            axis.line.x =element_line(linetype=1,colour="grey",size=0.4,lineend="butt"),
+            axis.line.y =element_line(linetype=1,colour="grey",lwd=0.4,lineend="butt"),
+            axis.line.x =element_line(linetype=1,colour="grey",lwd=0.4,lineend="butt"),
             legend.position ="top",
             ##axis.title.y =element_blank(),
             legend.text =element_text(size=14)
@@ -598,7 +651,7 @@ observeEvent(input$dat_prospective,{
             panel.border =element_blank(),
             axis.line.x =element_line(linetype=1,
                                       colour="grey",
-                                      size=0.4,
+                                      lwd=0.4,
                                       lineend="butt"),
             axis.title.y =element_blank(),
             axis.text.y=element_blank(),
