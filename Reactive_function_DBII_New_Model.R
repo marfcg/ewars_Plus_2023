@@ -5,6 +5,7 @@ require(lubridate)
 observeEvent(input$line_dat_prospective,{
   ## read in uploaded data
   req(input$line_dat_prospective)
+  print('Entered')
   get_D_ata<-function(p){
     if(str_detect(p,".xlsx$")){
       data <- data.frame(read_xlsx(p,sheet=1),stringsAsFactors =F)
@@ -22,18 +23,19 @@ observeEvent(input$line_dat_prospective,{
   
   # Case notification line-data:
   inFile_line_dat <- get_D_ata(input$line_dat_prospective$datapath)
+  names(inFile_line_dat)
   epiweek.list <- inFile_line_dat %>%
-    mutate(epi.year = epiyear(date_upload),
+    dplyr::mutate(epi.year = epiyear(date_upload),
            epi.week = epiweek(date_upload),
            epi.yearweek = paste0(epi.year, '-', epi.week)) %>%
-    distinct(epi.year, epi.week, epi.yearweek) %>%
-    arrange(epi.year, epi.week) %>%
-    select(epi.yearweek) %>%
+    dplyr::distinct(epi.year, epi.week, epi.yearweek) %>%
+    dplyr::arrange(epi.year, epi.week) %>%
+    dplyr::select(epi.yearweek) %>%
     tail(10)
   
   # Update last epiweek selection:
-  updateSelectInput(session,"lastepiweek_nowcast",choices=epiweek.list,
-                    selected = epiweek.list[10])
+  updateSelectInput(session,"lastepiweek_nowcast",choices=epiweek.list$epi.yearweek,
+                    selected = epiweek.list$epi.yearweek[10])
 }
 )
 

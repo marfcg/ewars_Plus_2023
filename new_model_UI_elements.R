@@ -93,7 +93,7 @@ surv.Input_line_dat_lastepiweek <- column(12, offset=0,
                                                       '',multiple =F,
                                                       width='10%'))
 surv.Input_run <- column(12, offset=0,
-                        plotOutput("dd",height ="60px"),
+                        plotOutput("button_run_prospect",height ="60px"),
                         actionButton('run_prospect','Run prospective data',
                                      style="color: black; background-color:grey(0.5);
                                  padding: 10px 15px; height: 80px; cursor: pointer;
